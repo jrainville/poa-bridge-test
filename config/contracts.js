@@ -1,6 +1,6 @@
 let secrets;
 try {
-  secrets = require('secrets');
+  secrets = require('./secrets.json');
 } catch (e) {
   console.warn('No secrets.json file found. You will not be able to use Rinkeby');
   secrets = {};
@@ -21,13 +21,15 @@ module.exports = {
 
     gas: "auto",
 
-    strategy: 'implicit',
+    strategy: 'explicit',
 
     contracts: {
       BridgeToken: {
-       onDeploy: async (deps) => {
-         await deps.contracts.BridgeToken.methods.mint(100000000000000000000).send({from: deps.web3.eth.defaultAccount});
-       }
+        onDeploy: async (deps) => {
+          await deps.contracts.BridgeToken.methods.mint(deps.web3.eth.defaultAccount, '100000000000000000000').send({from: deps.web3.eth.defaultAccount});
+          const balance = await deps.contracts.BridgeToken.methods.balanceOf(deps.web3.eth.defaultAccount).call({from: deps.web3.eth.defaultAccount});
+          deps.logger.info(`Success: Default account now has ${balance} bridge tokens`);
+        }
       }
     }
   },
@@ -43,6 +45,7 @@ module.exports = {
   },
 
   rinkeby: {
+    tracking: 'rinkebyChains.json',
     deployment: {
       host: `rinkeby.infura.io/${secrets.infuraId}`,
       port: false,
@@ -58,18 +61,15 @@ module.exports = {
 
   // merges with the settings in default
   // used with "embark run privatenet"
-  privatenet: {
-  },
+  privatenet: {},
 
   // merges with the settings in default
   // used with "embark run testnet"
-  testnet: {
-  },
+  testnet: {},
 
   // merges with the settings in default
   // used with "embark run livenet"
-  livenet: {
-  },
+  livenet: {},
 
   // you can name an environment with specific settings and then specify with
   // "embark run custom_name" or "embark blockchain custom_name"
